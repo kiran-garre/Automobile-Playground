@@ -48,7 +48,7 @@ class Cylinder:
         next(self.stroke_gen) # need to send None first to use generator
 
     def inject(self, throttle, omega):
-        estimated_air = math.pi / omega * throttle * AIR_FLOW_RATE
+        estimated_air = AIR_FLOW_RATE * throttle / math.sqrt(omega)
         self.mols = estimated_air + estimated_air / 14.7 # air to fuel ratio
     
     def spark(self):

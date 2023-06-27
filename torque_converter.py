@@ -29,10 +29,13 @@ class TorqueConverter:
         self.output_torque = 0
 
     def update(self, gear_ratio):
-        mf = self.K * (1 - math.e**(-self.C * self.impeller_omega)) * (1 + self.a * self.visc)
+        mf = self.K * (1 - math.exp(-self.C * (self.impeller_omega - self.turbine_omega))) * (1 + self.a * self.visc)
+        
         self.output_torque = mf * self.input_torque
 
+        # print(self.output_torque, self.driveshaft_moment)
         turbine_alpha = self.output_torque / self.driveshaft_moment
+        # print(turbine_alpha)
         self.turbine_omega += turbine_alpha * self.TIME_STEP
 
 

@@ -21,6 +21,8 @@ class Cylinder:
     def __init__(self, bore, stroke, start_x, initial_stroke) -> None:
 
         global AIR_FLOW_RATE
+
+        self.TIME_STEP = 0
         
         # cylinder stats
         self.radius = bore / 2 # m
@@ -28,7 +30,7 @@ class Cylinder:
         self.cyl_vol = stroke * self.radius**2 * math.pi + 5e-5 # m^3 (addition for clearance volume to avoid div by 0 error)
         self.mass = 1 # (math.pi * self.radius**2 * (stroke / 4.5) * 7850) # mass of piston in kg (density of carbon steel ~ 7850 kg/m^3) -> m^3 * kg/m^3 = kg
         
-        AIR_FLOW_RATE = bore * stroke * 2 # 0.0797591 # (((self.cyl_vol * 4 * 61023.7) * (1.29) * 733 / 3456) * 0.000471947) # displacement * air density with mols * volumetric efficiency * max expected omega
+        AIR_FLOW_RATE = bore * stroke * 1.35 # 0.0797591 # (((self.cyl_vol * 4 * 61023.7) * (1.29) * 733 / 3456) * 0.000471947) # displacement * air density with mols * volumetric efficiency * max expected omega
 
         # m^3 * kg/m^3
 
@@ -47,8 +49,14 @@ class Cylinder:
         self.stroke_gen = self.next_stroke()
         next(self.stroke_gen) # need to send None first to use generator
 
-    def inject(self, throttle, omega):
-        estimated_air = AIR_FLOW_RATE * throttle / math.sqrt(omega)
+    def inject(self, throttle, rpm, gear_ratio):
+        estimated_air = 0
+        k = 3e-5
+        c = 1.0008
+        if rpm < 3000:
+            estimated_air = k * throttle * 0.9817425815 * math.sqrt(rpm)
+        else:
+            estimated_air = k * throttle * (math.sqrt(3000) - (c**(gear_ratio / 2))**(rpm - 3000))
         self.mols = estimated_air + estimated_air / 14.7 # air to fuel ratio
     
     def spark(self):
@@ -71,10 +79,11 @@ class Cylinder:
             i = i % 4 + 1
             spark = False
             throttle = yield
+            gear_ratio = yield
             omega = yield
             match i:
                 case 1:
-                    self.inject(throttle, omega)
+                    self.inject(throttle, omega, gear_ratio)
                 case 3:
                     self.spark()
                     spark = True
@@ -158,11 +167,11 @@ class Crankshaft:
         self.torque_list = np.zeros((num_cylinders,))
         
 
-    def update(self):
+    def update(self, gear_ratio, torque_loss):
 
         # print(self.cyl0.current_stroke)
         
-        self.torque = np.sum(self.torque_list)
+        self.torque = np.sum(self.torque_list) - torque_loss
         self.alpha = self.torque / self.moment
         self.omega += self.alpha * self.TIME_STEP
         self.theta += self.omega * self.TIME_STEP
@@ -175,19 +184,6 @@ class Crankshaft:
         
         for i in range(len(self.cylinders)):
             self.torque_list[i] = self.bearing_length * self.cylinders[i].force # (np.sin(self.angles[i])) # sine is omitted due to error caused by discrete time steps
-
-        stroke_list = []
-        for cyl in self.cylinders:
-            stroke_list.append(cyl.current_stroke)
-
-        mols_list = []
-        for cyl in self.cylinders:
-            mols_list.append(cyl.mols)
-
-        
-
-        # print(self.torque_list)
-        # print(mols_list)
 
         # for i in range(len(stroke_list)): # should always be false
         #     match stroke_list[i]:
@@ -206,7 +202,8 @@ class Crankshaft:
                 
                 for cyl in self.cylinders:
                     cyl.stroke_gen.send(self.throttle)
-                    cyl.current_stroke = cyl.stroke_gen.send(self.omega)
+                    cyl.stroke_gen.send(gear_ratio)
+                    cyl.current_stroke = cyl.stroke_gen.send(self.rpm)
                     next(cyl.stroke_gen)
 
                     
@@ -232,7 +229,9 @@ class Crankshaft:
 
         self.rpm = self.omega / (2 * math.pi) * 60
 
-        
+    def set_cylinder_time_step(self, t):
+        for cyl in self.cylinders:
+            cyl.TIME_STEP = t  
         
 
     def display(self):

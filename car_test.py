@@ -2,6 +2,7 @@
 import math
 import time
 import matplotlib.pyplot as plt
+import numpy as np
 
 from engine import Engine
 from torque_converter import TorqueConverter
@@ -79,6 +80,7 @@ class Car:
         self.reset()
         
         self.TIME_STEP = override
+        self.engine.cs.set_cylinder_time_step(self.TIME_STEP)
         self.engine.cs.TIME_STEP = self.TIME_STEP
         self.torque_converter.TIME_STEP = self.TIME_STEP
         self.transmission.TIME_STEP = self.TIME_STEP
@@ -124,7 +126,7 @@ class Car:
 
         # Linking
         self.engine.cs.moment += self.torque_converter.impeller_and_fluid_moment
-        self.torque_converter.driveshaft_moment += self.transmission.moment + self.wheels.moment
+        self.torque_converter.driveshaft_moment = 0.3 + self.transmission.moment + (self.wheels.moment / self.transmission.gear_ratio / self.wheels.final_drive_ratio)
 
 
     def update(self):
@@ -136,21 +138,22 @@ class Car:
         # set omega and torque of impeller equal to omega and torque of engine
         self.torque_converter.impeller_omega = self.engine.cs.omega
         self.torque_converter.input_torque = self.engine.cs.torque
+        # print(self.engine.cs.torque)
 
         # set omega of transmission equal to omega of turbine
         self.transmission.omega = self.torque_converter.turbine_omega 
 
        
         # set omega of wheels equal to omega of transmission / gear_ratio
-        self.wheels.omega = self.transmission.omega / self.transmission.gear_ratio / self.wheels.final_drive_ratio\
+        self.wheels.omega = self.transmission.omega / self.transmission.gear_ratio / self.wheels.final_drive_ratio
 
         # apply rolling resistance to turbine/driveshaft torque
         self.torque_converter.output_torque -= self.wheels.rolling_resistance
-        self.engine.cs.torque -= (self.wheels.rolling_resistance * self.transmission.gear_ratio) + (self.wheels.drag / self.wheels.radius * self.transmission.gear_ratio)
+        torque_loss = (self.wheels.rolling_resistance * self.transmission.gear_ratio) + (self.wheels.drag / self.wheels.radius * self.transmission.gear_ratio)
 
         
         # update every part
-        self.engine.update(throttle)
+        self.engine.update(throttle, self.transmission.gear_ratio, torque_loss)
         self.torque_converter.update(self.transmission.gear_ratio)
         self.transmission.update(throttle, self.engine_rpm, self.mph)
         self.wheels.update()
@@ -165,7 +168,7 @@ class Car:
 
         # when shift is complete
         if self.transmission.just_shifted:
-            print("HEEEEEEEEEEEEE")
+            # print("HEEEEEEEEEEEEE")
             print(self.transmission.current_gear)
             
             self.transmission.omega = self.wheels.omega * self.wheels.final_drive_ratio
@@ -182,7 +185,7 @@ class Car:
             self.transmission.just_shifted = False
             prev_gear_ratio = self.transmission.gear_ratio
 
-
+        self.torque_converter.driveshaft_moment = 0.3 + self.transmission.moment + (self.wheels.moment / self.transmission.gear_ratio / self.wheels.final_drive_ratio)
 
     
 
@@ -196,8 +199,10 @@ class Car:
             self.update()
             torques_list.append(self.engine.cs.torque)
             mphs.append(self.mph)
-            # print("SPEED: {}\nTIME: {}\n".format(self.mph, _ * self.TIME_STEP))
-            # print(self.engine.cs.TIME_STEP)
+            rpms.append(self.torque_converter.turbine_omega * 60 / (2 * math.pi))
+            print("RPM: {}\nSPEED: {}\nTIME: {}\n".format(self.engine_rpm, self.mph, _ * self.TIME_STEP))
+            
+
             
             # print(self.mph)
             # if self.transmission.shifting:
@@ -206,10 +211,10 @@ class Car:
 
             # print("TIME: ", _ * self.TIME_STEP)
             # print(self.transmission.gear_ratio, self.torque_converter.output_torque)
-            rpms.append(self.engine_rpm)
-            # time.sleep(0.0001)
+            # rpms.append(self.engine_rpm)
+            # time.sleep(0.01)
             
-        plt.plot(range(_ + 1), torques_list)
+        plt.plot(np.arange(_ + 1) * self.TIME_STEP, torques_list)
         # plt.plot(rpms, torques_list)
         # plt.plot(range(_ + 1), mphs)
         # plt.plot(range(_ + 1), rpms)
@@ -229,7 +234,7 @@ class Car:
     
 
 car = Car()
-car.run(40)
+car.run(20)
         
 
 

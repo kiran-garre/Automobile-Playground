@@ -18,7 +18,7 @@ Y = 1.4
 
 class Cylinder:
 
-    def __init__(self, bore, stroke, start_x, initial_stroke) -> None:
+    def __init__(self, bore, stroke, start_x, initial_stroke, compression_ratio) -> None:
 
         global AIR_FLOW_RATE
 
@@ -27,10 +27,11 @@ class Cylinder:
         # cylinder stats
         self.radius = bore / 2 # m
         self.stroke = stroke # m
-        self.cyl_vol = stroke * self.radius**2 * math.pi + 5e-5 # m^3 (addition for clearance volume to avoid div by 0 error)
+        self.cyl_vol = stroke * self.radius**2 * math.pi # m^3 
+        self.cyl_vol += self.cyl_vol / (compression_ratio / 1) # avoids div by 0 error
         self.mass = 1 # (math.pi * self.radius**2 * (stroke / 4.5) * 7850) # mass of piston in kg (density of carbon steel ~ 7850 kg/m^3) -> m^3 * kg/m^3 = kg
         
-        AIR_FLOW_RATE = bore * stroke * 1.35 # 0.0797591 # (((self.cyl_vol * 4 * 61023.7) * (1.29) * 733 / 3456) * 0.000471947) # displacement * air density with mols * volumetric efficiency * max expected omega
+        AIR_FLOW_RATE = 0 # bore * stroke * 1.35 # 0.0797591 # (((self.cyl_vol * 4 * 61023.7) * (1.29) * 733 / 3456) * 0.000471947) # displacement * air density with mols * volumetric efficiency * max expected omega
 
         # m^3 * kg/m^3
 
@@ -132,7 +133,7 @@ class Cylinder:
 
 class Crankshaft:
 
-    def __init__(self, num_cylinders, stroke, bore) -> None:
+    def __init__(self, num_cylinders, configuration, stroke, bore) -> None:
 
         self.TIME_STEP = 0.0015
         
@@ -143,14 +144,13 @@ class Crankshaft:
         self.num_cylinders = num_cylinders
         self.cylinders = [None] * num_cylinders
 
-        self.original_angles = np.array([0, math.pi, math.pi, 0])
-        self.angles = np.array([0, math.pi, math.pi, 0])
-
-        self.firing_order = np.array([3, 4, 2, 1])
+        self.configuration_setup(configuration, num_cylinders)
+        print(self.start_stroke)
+        sys.exit()
 
         for i in range(num_cylinders):
             start_x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
-            self.cylinders[i] = Cylinder(bore, stroke, start_x=start_x, initial_stroke=self.firing_order[i])
+            self.cylinders[i] = Cylinder(bore, stroke, start_x=start_x, initial_stroke=self.start_stroke[i])
 
         self.theta = 0 # rad 
         self.omega = 0 # rad/s
@@ -165,6 +165,52 @@ class Crankshaft:
         self.throttle = 0
 
         self.torque_list = np.zeros((num_cylinders,))
+
+    def configuration_setup(self, config, num_cylinders):
+        
+
+        
+        if config == "I" and num_cylinders == 4:
+            self.original_angles = np.array([0, math.pi, math.pi, 0])
+            
+            self.angles = np.array([0, math.pi, math.pi, 0])
+            self.verticals = np.array([0, math.pi, math.pi, 0])
+            self.start_stroke = np.array([0, 0, 0, 0])
+
+        
+        elif config == "I" and num_cylinders == 6:
+            
+            self.original_angles = np.array([0, -60, -120, -120, -60, 0])
+            self.angles = np.array([0, -60, -120, -120, -60, 0])
+            
+            self.start_stroke = np.array([3, 3, 1, 2, 2, 4])
+            self.start_stroke = np.array([0, 0, 0, 0, 0, 0])
+            self.verticals = np.array([0, 480, 240, 600, 120, 360])
+
+            self.firing_order = (1, 5, 3, 6, 2, 4)
+
+
+            while 0 in self.start_stroke:
+                for i in range(num_cylinders):
+                    
+                    if self.angles[i] == self.verticals[i]:
+                        self.start_stroke[i] = 3
+
+                    elif self.start_stroke[i] != 0:
+                        self.start_stroke[i] += 1
+                        
+
+                print(self.angles)
+                self.angles += 180
+                    
+
+
+
+
+
+        
+
+
         
 
     def update(self, gear_ratio, torque_loss):
@@ -176,7 +222,7 @@ class Crankshaft:
         self.omega += self.alpha * self.TIME_STEP
         self.theta += self.omega * self.TIME_STEP
 
-        self.angles = self.original_angles + self.theta
+        self.angles = self.verticals + self.theta
 
         for i in range(len(self.cylinders)):
             self.cylinders[i].x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
@@ -185,6 +231,8 @@ class Crankshaft:
         for i in range(len(self.cylinders)):
             self.torque_list[i] = self.bearing_length * self.cylinders[i].force # (np.sin(self.angles[i])) # sine is omitted due to error caused by discrete time steps
 
+        stroke_list = []
+        
         # for i in range(len(stroke_list)): # should always be false
         #     match stroke_list[i]:
         #         case 1:

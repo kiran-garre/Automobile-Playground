@@ -15,13 +15,13 @@ max_torques = []
 
 class Engine:
 
-    def __init__(self, configuration="I", num_cylinders=4, stroke=0.0995, bore=0.0875) -> None:
+    def __init__(self, configuration="I", num_cylinders=4, stroke=0.0995, bore=0.0875, compression_ratio = 9.3) -> None:
         self.configuration = configuration
         self.num_cylinders = num_cylinders
 
         self.hp = 0
 
-        self.cs = Crankshaft(num_cylinders, stroke, bore)
+        self.cs = Crankshaft(num_cylinders, configuration, stroke, bore, compression_ratio)
 
         self.output_torque = 0
         

@@ -113,29 +113,13 @@ class Cylinder:
                 self.temp = engine_temp
 
         self.force = self.pressure * (math.pi * self.radius**2) # N/m^2 * m^2 = N
-
-
-        
-
-    def display(self):
-        print("Gas in cylinder: ", self.mols * 1000 * 120)
-        print("Temperature: ", self.temp)
-        print("Pressure:", self.pressure)
-        print("Available Volume: ", self.available_volume)
-
-        print("Force: ", self.force)
-        print("Acceleration: ", self.a)
-        print("Velocity: ", self.v)
-        print("Position:", self.x)
-
-        print()
     
 
 class Crankshaft:
 
-    def __init__(self, num_cylinders, configuration, stroke, bore) -> None:
+    def __init__(self, num_cylinders, configuration, stroke, bore, compression_ratio) -> None:
 
-        self.TIME_STEP = 0.0015
+        self.TIME_STEP = 0.00015
         
         self.mass = 23 # kg
         self.bearing_length = stroke / 2
@@ -143,14 +127,15 @@ class Crankshaft:
 
         self.num_cylinders = num_cylinders
         self.cylinders = [None] * num_cylinders
+        self.angle_offset = np.radians(720 / num_cylinders)
 
         self.configuration_setup(configuration, num_cylinders)
-        print(self.start_stroke)
-        sys.exit()
+        print(self.angles)
+
 
         for i in range(num_cylinders):
             start_x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
-            self.cylinders[i] = Cylinder(bore, stroke, start_x=start_x, initial_stroke=self.start_stroke[i])
+            self.cylinders[i] = Cylinder(bore, stroke, start_x, self.start_stroke[i], compression_ratio)
 
         self.theta = 0 # rad 
         self.omega = 0 # rad/s
@@ -170,68 +155,56 @@ class Crankshaft:
         
 
         
-        if config == "I" and num_cylinders == 4:
-            self.original_angles = np.array([0, math.pi, math.pi, 0])
+        if config == "I" and num_cylinders == 4: # firing order = 1, 3, 4, 2
+            self.original_angles = np.array([0, -3 * math.pi, -math.pi, -2 * math.pi])
             
-            self.angles = np.array([0, math.pi, math.pi, 0])
+            self.angles = np.array([0, -3 * math.pi, -math.pi, -2 * math.pi])
             self.verticals = np.array([0, math.pi, math.pi, 0])
-            self.start_stroke = np.array([0, 0, 0, 0])
+            self.start_stroke = np.array([3, 4, 2, 1])
 
         
-        elif config == "I" and num_cylinders == 6:
+        elif config == "I" and num_cylinders == 6: # firing order = 1, 5, 3, 6, 2, 4
             
-            self.original_angles = np.array([0, -60, -120, -120, -60, 0])
-            self.angles = np.array([0, -60, -120, -120, -60, 0])
+            self.original_angles = np.radians([0, -480, -240, -600, -120, -360])
+            self.angles = np.radians([0, -480, -240, -600, -120, -360])
+            print(self.angles)
             
             self.start_stroke = np.array([3, 3, 1, 2, 2, 4])
-            self.start_stroke = np.array([0, 0, 0, 0, 0, 0])
-            self.verticals = np.array([0, 480, 240, 600, 120, 360])
 
-            self.firing_order = (1, 5, 3, 6, 2, 4)
-
-
-            while 0 in self.start_stroke:
-                for i in range(num_cylinders):
-                    
-                    if self.angles[i] == self.verticals[i]:
-                        self.start_stroke[i] = 3
-
-                    elif self.start_stroke[i] != 0:
-                        self.start_stroke[i] += 1
-                        
-
-                print(self.angles)
-                self.angles += 180
-                    
-
-
-
-
-
-        
+            self.verticals = np.array([0, -480, -240, -600, -120, -360])
 
 
         
 
     def update(self, gear_ratio, torque_loss):
 
-        # print(self.cyl0.current_stroke)
+        def update_properties():
+            self.torque = np.sum(self.torque_list) - torque_loss
+            self.alpha = self.torque / self.moment
+            self.omega += self.alpha * self.TIME_STEP
+            self.theta += self.omega * self.TIME_STEP
+
+            self.angles = (self.original_angles + self.theta)
+            for i in range(len(self.cylinders)):
+                self.cylinders[i].x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
+            
+            for i in range(len(self.cylinders)):
+                self.torque_list[i] = self.bearing_length * self.cylinders[i].force * np.sin(self.angles[i]) # sine is omitted due to error caused by discrete time steps
+                print(self.angles[i])
         
-        self.torque = np.sum(self.torque_list) - torque_loss
-        self.alpha = self.torque / self.moment
-        self.omega += self.alpha * self.TIME_STEP
-        self.theta += self.omega * self.TIME_STEP
+            
+        
 
-        self.angles = self.verticals + self.theta
+        update_properties()
 
+        stroke_list = [0, 0, 0, 0, 0, 0]
         for i in range(len(self.cylinders)):
-            self.cylinders[i].x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
+            stroke_list[i] = self.cylinders[i].current_stroke
+        print(stroke_list, self.theta)
+
+
 
         
-        for i in range(len(self.cylinders)):
-            self.torque_list[i] = self.bearing_length * self.cylinders[i].force # (np.sin(self.angles[i])) # sine is omitted due to error caused by discrete time steps
-
-        stroke_list = []
         
         # for i in range(len(stroke_list)): # should always be false
         #     match stroke_list[i]:
@@ -244,47 +217,41 @@ class Crankshaft:
         #         case 4:
         #             print(self.torque_list[i] != 0, stroke_list[i])
         
-        if (self.theta // (math.pi)) > self.multiple:
-
-            for _ in range(int((self.theta // (math.pi)) - self.multiple)):
+        strokes_passed = int(self.theta // self.angle_offset)
+        for i in range(strokes_passed):
+            # sys.exit()
+            # this checks if it is time for a new stroke for each cylinder independently; the first loop until theta == angle_offset handles the angle offset
+            for j in range(len(self.cylinders)):
+                check_angle = self.angles[j] - ((strokes_passed - i - 1) * math.pi) - self.original_angles[j]
                 
-                for cyl in self.cylinders:
+                # addition for second condition accounts for 1 iteration error
+                if check_angle >= 0 and check_angle < self.angle_offset + (self.omega * self.TIME_STEP):
+                    print(j)
+                    cyl = self.cylinders[j]
                     cyl.stroke_gen.send(self.throttle)
                     cyl.stroke_gen.send(gear_ratio)
                     cyl.current_stroke = cyl.stroke_gen.send(self.rpm)
                     next(cyl.stroke_gen)
 
-                    
+                    self.original_angles[j] = -math.pi
 
-                    
+            # necessary for if power stroke gets skipped
+            update_properties()
 
+            self.angles %= 2 * math.pi
                 
+        self.multiple = self.theta // math.pi
+        self.theta %= 2 * math.pi
 
-                for i in range(len(self.cylinders)):
-                    self.torque_list[i] = self.bearing_length * self.cylinders[i].force # (np.sin(self.angles[i])) # sine is omitted due to error caused by discrete time steps
 
-                self.torque = np.sum(self.torque_list)
-                self.alpha = self.torque / self.moment
-                self.omega += self.alpha * self.TIME_STEP
-                self.theta += self.omega * self.TIME_STEP
-
-                self.angles = self.original_angles + self.theta
-
-                for i in range(len(self.cylinders)):
-                    self.cylinders[i].x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
-                
-            self.multiple = self.theta // math.pi
 
         self.rpm = self.omega / (2 * math.pi) * 60
+
 
     def set_cylinder_time_step(self, t):
         for cyl in self.cylinders:
             cyl.TIME_STEP = t  
         
-
-    def display(self):
-        print("Omega: ", self.omega)
-        print("Theta: ", self.theta)
 
 
 

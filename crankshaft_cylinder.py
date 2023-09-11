@@ -192,7 +192,7 @@ class Crankshaft:
             for i in range(len(self.cylinders)):
                 self.torque_list[i] = self.bearing_length * self.cylinders[i].force * np.sin(self.angles[i]) # sine is omitted due to error caused by discrete time steps
     
-
+ 
         stroke_list = [0, 0, 0, 0, 0, 0]
         for i in range(len(self.cylinders)):
             stroke_list[i] = self.cylinders[i].current_stroke

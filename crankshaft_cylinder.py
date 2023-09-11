@@ -89,7 +89,7 @@ class Cylinder:
             self.update(spark)
             
             yield i
-
+            
     def stroke_behavior(self, stroke, throttle, omega):
         
         self.current_stroke = stroke

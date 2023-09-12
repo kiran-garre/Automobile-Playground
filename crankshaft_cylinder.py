@@ -11,7 +11,6 @@ import copy
    
 R = 8.3145
 engine_temp = 20 + 273.15 # K
-Y = 1.4
 
 
 class Cylinder:
@@ -36,7 +35,8 @@ class Cylinder:
         self.friction = 0
 
         # realtime stats
-        self.mols = 0 # mols
+        self.total_mols = 0 # moles
+        self.grams_of_gas = 0
         self.pressure = 0 # N/m^2
         self.temp = engine_temp # K
         self.available_volume = self.cyl_vol - (self.radius**2 * math.pi * self.x) # m^3
@@ -47,28 +47,20 @@ class Cylinder:
         next(self.stroke_gen) # need to send None first to use generator
 
     def inject(self, throttle, rpm):
-        estimated_air = 0
-        k = 3e-3
-        peak_rpm = 3000
-        if rpm < peak_rpm:
-            estimated_air = k * throttle * np.sin(math.pi * rpm / (2 * peak_rpm))
-        else:
-            estimated_air = k * throttle * math.exp(-(1 / peak_rpm) * (rpm - peak_rpm))
-        self.mols = estimated_air + estimated_air / 14.7 # air to fuel ratio
+        peak_rpm = 5000
+        estimated_air = throttle * self.cyl_vol / max(1, (rpm / peak_rpm)) * 1225 # find air in m^3, then convert to grams using density of air
+        self.grams_of_gas = estimated_air / 14.7 # use air:fuel ratio to get grams of gas
+        self.total_mols = (estimated_air / 28.96) + (self.grams_of_gas / 100) # convert air and gas to moles (gas is approximately 100 g/mol)
+
     
     def spark(self):
 
         "PV = nRT -> P = nRT/V"
-        
-        if self.mols != 0:
-            fuel_mass_fraction = 1 / (1 + 14.7)
-            air_mass_fraction = 14.7 * fuel_mass_fraction
-            Q = self.mols * (44e6 * fuel_mass_fraction) / (2 * fuel_mass_fraction)
-            Cp = 1005
-            self.temp = Q / (self.mols * Cp) # K
+        if self.total_mols != 0:
+            self.temp = 2411 # adiabatic flame temperature of gasoline
 
     def exhaust(self):
-        self.mols = 0
+        self.total_mols = 0
 
     def next_stroke(self):
         i = self.current_stroke
@@ -76,7 +68,6 @@ class Cylinder:
             i = i % 4 + 1
             spark = False
             throttle = yield
-            gear_ratio = yield
             omega = yield
             match i:
                 case 1:
@@ -91,25 +82,36 @@ class Cylinder:
             
             yield i
 
+    def stroke_behavior(self, stroke, throttle, omega):
+        
+        self.current_stroke = stroke
+        spark = False
+        match stroke:
+            case 1:
+                self.inject(throttle, omega)
+            case 3:
+                self.spark()
+                spark = True
+            case 0: # stroke 4
+                self.exhaust()
+
+        self.update(spark)
+        
+
 
     def update(self, sparkbool):
         old_pressure = self.pressure
         self.available_volume = self.cyl_vol - (self.radius**2 * math.pi * self.x) # m^3
-
-        if True:
-            self.available_volume = self.cyl_vol / 2
-
-        self.pressure = self.mols * R * (self.temp + engine_temp) / (self.available_volume) # N/m^2
+        self.pressure = self.total_mols * R * (self.temp + engine_temp) / (self.available_volume) # N/m^2
         
-
         if (not sparkbool):
             if (old_pressure != 0): 
-                self.temp = self.temp * (self.pressure / old_pressure)**((Y - 1)/Y) # K (Charles' Law)
+                self.temp = self.temp * (self.pressure / old_pressure) # K (Gay Lussac's Law)
             else:
                 self.temp = engine_temp
 
         self.force = self.pressure * (math.pi * self.radius**2) # N/m^2 * m^2 = N
-    
+
 
 class Crankshaft:
 
@@ -125,15 +127,17 @@ class Crankshaft:
         self.cylinders = [None] * num_cylinders
         self.angle_offset = np.radians(720 / num_cylinders)
         
-
+        self.stroke_list = None
         self.configuration_setup(configuration, num_cylinders)
 
-        self.check_angles = self.angles + math.pi
+        self.check_angles = np.zeros(num_cylinders)
+
+        
 
 
         for i in range(num_cylinders):
             start_x = self.bearing_length * np.cos(self.angles[i]) + self.bearing_length
-            self.cylinders[i] = Cylinder(bore, stroke, start_x, self.start_stroke[i], compression_ratio)
+            self.cylinders[i] = Cylinder(bore, stroke, start_x, self.stroke_list[i], compression_ratio)
 
         self.theta = 0 # rad 
         self.omega = 0 # rad/s
@@ -151,33 +155,31 @@ class Crankshaft:
 
     def configuration_setup(self, config, num_cylinders):
         
-
-        
         if config == "I" and num_cylinders == 4: # firing order = 1, 3, 4, 2
-            self.original_angles = np.array([0, -3 * math.pi, -math.pi, -2 * math.pi])
             
             self.angles = np.array([0, -3 * math.pi, -math.pi, -2 * math.pi])
-            self.verticals = np.array([0, math.pi, math.pi, 0])
-            self.start_stroke = np.array([3, 4, 2, 1])
+            self.stroke_list = np.array([3.0, 3.0, 3.0, 3.0])
+            self.stroke_list += (self.angles) / (math.pi)
 
         
         elif config == "I" and num_cylinders == 6: # firing order = 1, 5, 3, 6, 2, 4
             
-            self.original_angles = np.radians([0, -480, -240, -600, -120, -360])
             self.angles = np.radians([0, -480, -240, -600, -120, -360])
-            # print(self.angles)
             
-            self.start_stroke = np.array([3, 2, 1, 1, 2, 4])
+            self.stroke_list = np.array([3.0, 3.0, 3.0, 3.0, 3.0, 3.0])
+            
+            self.stroke_list += (self.angles) / (math.pi)
+            print(self.stroke_list)
+            # sys.exit()
 
-            self.verticals = np.array([0, -480, -240, -600, -120, -360])
 
 
         
 
-    def update(self, gear_ratio, torque_loss):
+    def update(self, torque_loss):
 
         def update_properties():
-            self.torque = np.sum(self.torque_list) #- torque_loss
+            self.torque = np.sum(self.torque_list) - torque_loss
             # print(torque_loss)
             self.alpha = self.torque / self.moment
             self.omega += self.alpha * self.TIME_STEP
@@ -191,29 +193,31 @@ class Crankshaft:
             
             for i in range(len(self.cylinders)):
                 self.torque_list[i] = self.bearing_length * self.cylinders[i].force * np.sin(self.angles[i]) # sine is omitted due to error caused by discrete time steps
+
+            self.stroke_list += (self.omega * self.TIME_STEP) / (math.pi)
+            self.stroke_list %= 4
     
  
-        stroke_list = [0, 0, 0, 0, 0, 0]
-        for i in range(len(self.cylinders)):
-            stroke_list[i] = self.cylinders[i].current_stroke
-        # print(stroke_list, self.theta)
 
 
         for j in range(len(self.cylinders)):
 
             if self.angles[j] + (self.omega * self.TIME_STEP) >= self.check_angles[j]:
-                cyl = self.cylinders[j]
-                cyl.stroke_gen.send(self.throttle)
-                cyl.stroke_gen.send(gear_ratio)
-                cyl.current_stroke = cyl.stroke_gen.send(self.rpm)
-                next(cyl.stroke_gen)
+                rpm = 60 * self.omega / (2 * math.pi)
+                self.cylinders[j].stroke_behavior(round(self.stroke_list[j]) % 4, self.throttle, rpm)
+                # self.cylinders[j].current_stroke += 1
+                
 
                 self.check_angles[j] += math.pi
-        # print(self.torque_list, stroke_list, int(np.degrees(self.angles[0])))
 
         # print(self.torque_list)
         update_properties()
 
+
+        print(self.torque_list)
+        print(self.cylinders[0].grams_of_gas)
+        # for cyl in self.cylinders:
+        #     print(cyl.temp)
                 
         self.multiple = self.theta // math.pi
         self.theta %= self.angle_offset

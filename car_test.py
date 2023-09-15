@@ -11,9 +11,6 @@ from transmission_draft import Transmission
 from wheel_set import WheelSet
 
 
-
-
-
 class Car:
     
     def __init__(self) -> None:
@@ -223,9 +220,6 @@ class Car:
 
     
 
-car = Car()
-
-car.demo_run(40, override=0.00, animate=False)
 
 
 

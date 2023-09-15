@@ -148,7 +148,7 @@ class Car:
         
         # update every part
         self.engine.update(self.throttle, drag_loss)
-        self.torque_converter.update(self.transmission.gear_ratio)
+        self.torque_converter.update()
         self.transmission.update(self.throttle, self.engine_rpm, self.mph)
         self.wheels.update()
 
@@ -169,12 +169,7 @@ class Car:
         
             # shifting process done; wait for next shift
             self.transmission.just_shifted = False
-            
 
-            
-
-        
-    
 
     def demo_run(self, duration, override=0, animate=False):
         torques_list = []

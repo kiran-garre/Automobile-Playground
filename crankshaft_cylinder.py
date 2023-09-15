@@ -1,14 +1,12 @@
-
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-
 from math import pi, floor
+
 
 R = 8.3145
 ENGINE_TEMP = 20 + 273.15 # K
-
 
 
 class Cylinder:

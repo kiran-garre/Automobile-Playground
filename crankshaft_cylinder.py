@@ -4,12 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-import copy
-
 from math import pi, floor
 
 R = 8.3145
 ENGINE_TEMP = 20 + 273.15 # K
+
 
 
 class Cylinder:
@@ -46,17 +45,15 @@ class Cylinder:
 
     
     def spark(self):
-        
+       
         "Q = mcT"
 
         if self.total_mols != 0:
-
             specific_heat = 1005 * (1 + 0.22 * (self.pressure - 1e5) / 1e5) # specific heat changes with pressure
             energy_released = 48000000 * self.kg_of_gas # 48 MJ per kg of gas * heat efficiency of engine (~20%)
             total_mass = self.kg_of_air + self.kg_of_gas
             self.temp = energy_released / (total_mass * specific_heat) 
             self.total_mols *= 17 / 12.5
-
 
     def exhaust(self):
         self.kg_of_air = 0
@@ -67,7 +64,7 @@ class Cylinder:
 
     # chooses correct function based on stroke number
     def stroke_behavior(self, stroke, throttle, omega):
-        
+
         self.current_stroke = stroke
         spark = False
         match stroke:
@@ -102,7 +99,6 @@ class Cylinder:
         else:
             self.pressure = self.total_mols * R * (self.temp) / (self.available_volume) * 0.2 
         
-
         self.force = self.pressure * (pi * self.radius**2) # N/m^2 * m^2 = N
 
 
@@ -116,6 +112,7 @@ class Crankshaft:
         self.crank_length = stroke / 2 # approximate
 
         self.num_cylinders = num_cylinders
+
         self.cylinders = [None] * num_cylinders 
         self.angle_offset = 2 * pi / num_cylinders # angle offset between each piston/crank
         
@@ -140,7 +137,7 @@ class Crankshaft:
         self.throttle = 0 
 
         self.torque_list = np.zeros(num_cylinders) 
-
+        
     
     # sets up angles and strokes for each cylinder
     def configuration_setup(self, config, num_cylinders):
@@ -159,7 +156,6 @@ class Crankshaft:
             self.stroke_list += (self.angles) / (pi)
 
         
-
     def update(self, torque_loss):
 
         def update_properties():
@@ -190,12 +186,10 @@ class Crankshaft:
 
             if self.angles[j] >= self.check_angles[j]:
                 rpm = 60 * self.omega / (2 * pi)
-                
                 self.cylinders[j].stroke_behavior(floor(self.stroke_list[j]), self.throttle, rpm)
                 self.check_angles[j] += pi
 
         update_properties()
-
 
 
     def set_cylinder_time_step(self, t):

@@ -5,7 +5,7 @@ Welcome to my virtual car! Here you'll find 5 files that each represent the most
 ### Why I made this simulation:
 Let's face it: cars are not easy to play with. The lack of tools, mechanical knowledge, and budget make it difficult to tinker with the innards of the modern automobile. Deep inside, we all want to stick the world's largest, most powerful engine in the common Honda Civic and see what happens, but unless you have a team of professional engineers and a multi-million dollar budget, our dreams will go unrealized.
 
-Unfortunately, I have neither of those, so I had to resort to a cheaper option. In my simulation, you can change a multitude of parameters and see how they affect the car's performance in real-time. If you want to put a gas guzzling, 2 thousand horsepower monster inside a minivan, be my guest. If you feel the urge to see how a modern sports car would perform with the Ford Model T's engine, go for it. The possibilities are endless.
+Unfortunately, I have neither of those, so I had to resort to a cheaper option. In my simulation, you can change a multitude of parameters and see how they affect the car's performance in real-time. If you want to put a gas guzzling, two-thousand-horsepower monster inside a minivan, be my guest. If you feel the urge to see how a modern sports car would perform with the Ford Model T's engine, go for it. The possibilities are endless.
 
 ### What this simulation is:
 This simulation provides an approximation of a car's performance given reasonable paramters. Almost any value can be read and/or changed at any time, giving you full control over the virtual car. 

@@ -190,6 +190,7 @@ class Crankshaft:
         update_properties()
 
 
+    # sets TIME_STEP for each cylinder
     def set_cylinder_time_step(self, t):
         for cyl in self.cylinders:
             cyl.TIME_STEP = t  

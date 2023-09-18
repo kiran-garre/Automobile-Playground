@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 import sys
+import ast
 
 from engine import Engine
 from torque_converter import TorqueConverter
-from transmission_draft import Transmission
-from wheel_set import WheelSet
+from transmission import Transmission
+from wheels import Wheels
 
 
 class Car:
@@ -16,47 +17,51 @@ class Car:
     def __init__(self) -> None:
 
         self.TIME_STEP = 1
-        
-        # Engine
-        self.configuration = "I"
-        self.number_of_cylinders = 4
-        self.stroke = 0.0995
-        self.bore = 0.0875
-
-        self.engine = Engine(self.configuration, self.number_of_cylinders, self.stroke, self.bore)
-
-        # TorqueConverter
-        self.K = 2
-        self.C = 0.03
-        self.alpha = 0.005
-        self.viscosity = 0.05
-
-        self.torque_converter = TorqueConverter(self.K, self.C, self.alpha, self.viscosity)
-
-        # Transmission
-        self.number_of_gears = 6
-        self.ratio_list = [3.75, 2.25, 1.45, 1.15, 0.9, 0.7]
-        self.shift_time = 0.5
-
-        self.transmission = Transmission(self.number_of_gears, self.ratio_list, self.shift_time)
-
-        # Wheels
-        self.mass_per_wheel = 27
-        self.wheel_radius = 0.4
-
-        self.wheels = WheelSet(self.mass_per_wheel, self.wheel_radius)
-
-        # Linking
-        self.engine.cs.moment += self.torque_converter.impeller_and_fluid_moment
-        self.torque_converter.driveshaft_moment += self.transmission.moment + self.wheels.moment
-
-        self.mph = 0 
         self.engine_rpm = 0
+        self.mph = 0
 
+        self.all_args = self.read_parameters("parameters.txt")
+        self.initialize()
 
-    def setup_helper(self):
-        pass
+    
+    # read parameters from parameters.txt and put all the properly typed data into arrays
+    def read_parameters(self, file_name):
 
+        default_engine_args = ["I", 6, 0.08, 0.0896, 9.3, 1.4, 5500]
+        default_tc_args = [2, 0.03, 0.005, 0.05]
+        default_transmission_args = [8, [5, 3.2, 2.14, 1.72, 1.31, 1, 0.82, 0.64], 0.4]
+        default_wheel_args = [3.15, 0.33, 2, 175927, 0.49]
+        default_list = [default_engine_args, default_tc_args, default_transmission_args, default_wheel_args]
+
+        engine_args = []
+        torque_converter_args = []
+        transmission_args = []
+        wheel_args = []
+        
+        arg_lists = [engine_args, torque_converter_args, transmission_args, wheel_args]
+        
+        with open(file_name, 'r') as file:
+            current_list = 0
+            counter = 0
+            for line in file:
+                line = line.strip()
+                if line:
+                    if line[0] == '#':
+                        continue
+                    elif line[0] == '*':
+                        counter = 0
+                        current_list += 1
+                    else:
+                        try:
+                            data = ast.literal_eval(line.split("=")[-1]) # split at equals sign, choose type using ast
+                            arg_lists[current_list].append(data)
+                        except:
+                            arg_lists[current_list].append(default_list[current_list][counter]) # if field is left blank, use default value
+                        counter += 1
+
+        return arg_lists
+
+    
     def calibrate_time(self, override=0):
         
         if override <= 0:
@@ -71,7 +76,7 @@ class Car:
             end = time.time()
             override = (end - start) / 110
         
-        self.reset()
+        self.initialize()
         
         self.TIME_STEP = override
         self.engine.cs.set_cylinder_time_step(self.TIME_STEP)
@@ -81,46 +86,21 @@ class Car:
         self.wheels.TIME_STEP = self.TIME_STEP
         
 
-    def reset(self):
-        # Engine
-        self.configuration = "I"
-        self.number_of_cylinders = 6
-        self.stroke = 0.0946
-        self.bore = 0.082
-        self.compression_ratio = 10.2
-        self.volumetric_efficiency = 1.2
-
-        self.engine = Engine(self.configuration, self.number_of_cylinders, self.stroke, self.bore, self.compression_ratio, self.volumetric_efficiency)
+    # sets all parameters
+    def initialize(self):
+        
+        # set arguments from parameters.txt to corresponding engine part
+        self.engine = Engine(*self.all_args[0])
+        self.torque_converter = TorqueConverter(*self.all_args[1])
+        self.transmission = Transmission(*self.all_args[2])
+        self.wheels = Wheels(*self.all_args[3])
+        
+        # starting engine
         self.engine.cs.omega = 50
-
-        # TorqueConverter
-        self.K = 2
-        self.C = 0.03
-        self.alpha = 0.005
-        self.viscosity = 0.05
-
-        self.torque_converter = TorqueConverter(self.K, self.C, self.alpha, self.viscosity)
-
-        # Transmission
-        self.number_of_gears = 8
-        self.ratio_list = [5.25, 3.36, 2.172, 1.72, 1.316, 1, 0.822, 0.64]
-        self.shift_time = 0.5
-
-        self.transmission = Transmission(self.number_of_gears, self.ratio_list, self.shift_time)
-
-        # Wheels
-        self.final_drive_ratio = 3.154
-        self.drag_coefficient = 0.2
-        self.cross_sectional_area = 2
-
-        self.mass_per_wheel = 27
-        self.wheel_radius = 0.4
-
-        self.wheels = WheelSet(self.final_drive_ratio, self.drag_coefficient, self.cross_sectional_area, self.mass_per_wheel, self.wheel_radius)
 
         # Linking
         self.engine.cs.moment += self.torque_converter.impeller_and_fluid_moment
-        self.torque_converter.driveshaft_moment = 0.3 + self.transmission.moment + (self.wheels.moment / self.transmission.gear_ratio / self.wheels.final_drive_ratio)
+        self.torque_converter.driveshaft_moment += self.transmission.moment + self.wheels.moment
 
     def update(self):
 
@@ -218,7 +198,7 @@ class Car:
     
         pygame.quit()
 
-    
+
 
 
 

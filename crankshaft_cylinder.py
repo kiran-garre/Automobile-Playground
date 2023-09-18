@@ -11,7 +11,7 @@ ENGINE_TEMP = 20 + 273.15 # K
 
 class Cylinder:
 
-    def __init__(self, bore, stroke, start_x, initial_stroke, compression_ratio, volumetric_efficiency) -> None:
+    def __init__(self, bore, stroke, start_x, initial_stroke, compression_ratio, volumetric_efficiency, peak_rpm) -> None:
 
         self.TIME_STEP = 0
         
@@ -22,6 +22,7 @@ class Cylinder:
         self.cyl_vol += self.cyl_vol / (compression_ratio - 1) # add clearance volume
         self.mass = 1 
         self.ve = volumetric_efficiency 
+        self.peak_rpm = peak_rpm
 
         self.x = start_x # m
         
@@ -36,8 +37,7 @@ class Cylinder:
         self.current_stroke = initial_stroke
 
     def inject(self, throttle, rpm):
-        peak_rpm = 5000
-        self.kg_of_air = throttle * self.ve * self.cyl_vol / max(1, (rpm / peak_rpm))**0.9 * 1.293 # kg
+        self.kg_of_air = throttle * self.ve * self.cyl_vol / max(1, (rpm / self.peak_rpm))**0.9 * 1.293 # kg
         self.kg_of_gas = self.kg_of_air / 14.7 # use air:fuel ratio to get kg of gas
         self.total_mols = (self.kg_of_air / 0.029) + (self.kg_of_gas / 0.114) # convert air and gas to moles (air is 0.029 kg/mol, gas is 0.114 kg/mol)
 
@@ -102,7 +102,7 @@ class Cylinder:
 
 class Crankshaft:
 
-    def __init__(self, num_cylinders, configuration, stroke, bore, compression_ratio, volumetric_efficiency) -> None:
+    def __init__(self, num_cylinders, configuration, stroke, bore, compression_ratio, volumetric_efficiency, peak_rpm) -> None:
 
         self.TIME_STEP = 0
         
@@ -123,15 +123,14 @@ class Crankshaft:
         # initialize starting positions of pistons
         for i in range(num_cylinders):
             start_x = self.crank_length * np.cos(self.angles[i]) + self.crank_length
-            self.cylinders[i] = Cylinder(bore, stroke, start_x, self.stroke_list[i], compression_ratio, volumetric_efficiency)
+            self.cylinders[i] = Cylinder(bore, stroke, start_x, self.stroke_list[i], compression_ratio, volumetric_efficiency, peak_rpm)
 
         self.theta = 0 
         self.omega = 0 
         self.alpha = 0 
         self.torque = 0 
 
-        self.moment = 0.3 # estimation of moment of inertia
-
+        self.moment = 0.3 # estimate
         self.throttle = 0 
 
         self.torque_list = np.zeros(num_cylinders) 

@@ -1,11 +1,11 @@
-Many years ago, I was an avid player of racing games. Games where I could burn down the highway at 250 miles an hour, plowing through other cars with no damage to my own were the most entertaining.
+Many years ago, I was an avid player of racing games. If I could burn down the highway at 250 miles an hour and plow through other cars with no damage to my own, I would be content.
 
 There was one problem with these games: the customization. I could choose what car I wanted, what upgrades it had, and its paint color, but nothing else. But what I couldn't do was swap engines, transmissions, or even the wheels. 
 
 As I grew older, these creativity-killing restrictions bugged me. What was the point of customization if it was so contstrained?
 
-This question was the resaon I made this program. I wanted real customization, not the ability to buy a paint job. If I wanted to change its engine and observe the effects, i could. If I wanted to floor the virtual gas and get
-real-time stats on its torque and horsepower, I could. It would be a completely transparent, fully maleable virtual car. 
+This question was the resaon I made this program. I wanted real customization, not the ability to buy a paint job. If I wanted to change its engine and observe the effects, I could. If I wanted to floor the virtual gas and get
+real-time stats on its torque and horsepower, I could. It would be a completely transparent and fully malleable virtual car. 
 
 I thought to myself: where should I start? Theoretically, I could make it as deep as coding each individual atom and their interactions or as surface-level as increasing the car's speed based on some mathematical function. The former 
 was too difficult, and the latter was unsatisfactory. 
@@ -16,9 +16,9 @@ I decided to choose somewhere in between: a single cylinder of an engine.
 class Cylinder
 ```
 What parameters would I need? I started with the bore and stroke (and the resulting volume of the cylinder). The position of the piston within the cylinder would also be important, as well as the piston's current stroke.
-(Note: the Cylinder class represents the piston and cylinder together.)
+(Note: the `Cylinder` class represents the piston and cylinder together.)
 
-The basic premise behind a cylinder is the combustion of gasoline vapor creates immense pressure, pushing on the piston to generate a force. Thus, my next step was to code the 4 strokes: intake, compression, power, and exhaust.
+The basic premise behind a cylinder is the combustion of gasoline vapor creates immense pressure, pushing on the piston to generate a force. Thus, my next step was to code the 4 strokes: intake[^1], compression, power, and exhaust.
 ```
 def intake(self):
   pass
@@ -27,10 +27,10 @@ def spark(self):
 def exhaust(self):
   pass
 ```
-You'll notice that there is no function for compression. This is because, during the second stroke, the compression is natural result of the the piston pushing the gas vapor into a tighter area. There doesn't need to be an extra 
-function because there is no special behavior happening on the second stroke.
+You'll notice that there is no function for compression. This is because, during the second stroke, the compression is a natural result of the the piston pushing the gas vapor into a tighter area. There doesn't need to be an extra 
+function because there is no special behavior happening.
 
-I am no expert in chemistry or thermodynamics, so coding a realistic model of combustion seemed too far out of my scope. Instead, I decided to use the ideal gas law. This greatly simplified my task. The intake stroke would introduce some amount of air and fuel into the cylinder, increasing pressure. The compression stroke would decrease volume, raising the pressure and temperature. Then, the `spark()` function would simply raise the temperature based on the amount of gas injected, which would then increase the pressure in the cylinder.
+I am no expert in chemistry or thermodynamics, so coding a realistic model of combustion seemed too far out of my scope. Instead, I decided to use the ideal gas law, which greatly simplified my task. The intake stroke would introduce some amount of air and fuel into the cylinder, increasing number of moles and pressure. The compression stroke would decrease volume, raising the pressure and temperature. Then, the `spark()` function would raise the temperature based on the amount of gas injected, which would then increase the pressure in the cylinder.
 
 Of course, without any oscillatory motion, these strokes didn't mean anything. The most I could do was fill the cylinder with gas, ignite it, and have the piston move in one direction for the length of the stroke. This was boring,
 and it was hard to know how well it was working.
@@ -44,12 +44,47 @@ Therefore, all I needed to do was make attributes for the angle swept by the cra
 postions to the angle of the crankshaft using `cos(theta)`, and converted the force generated by each piston to torque using `sin(theta)`.
 
 The hardest part of the crankshaft-cylinder combination was managing the strokes. In my initial inline 4-cylinder engine, I created a generator function that would move to the next stroke every 180 degrees. However, once I moved to the more complex inline-six, this approach stopped working. The issue was that there were 6 cylinders and only 4 strokes, so treating the strokes as discrete steps would mean multiple cylinders would be performing the same task
-_at the same time._ This definitely wouldn't work because in a straight-six, the pistons change strokes at different times (instead of together every 180 degrees). To solve this, I made the strokes into continuous intervals. This allowed me to specify where each individual piston was in its stroke and made it easier to change manage their strokes independently[^1].
+_at the same time._ This definitely wouldn't work because in a straight-six, the pistons change strokes at different times (instead of together every 180 degrees). To solve this, I made the strokes into continuous intervals. This allowed me to specify where each individual piston was in its stroke and made it easier to manage their strokes independently[^2].
 
 To me, the cylinders and the crankshaft are the most fundamental parts of the engine. The cylinders generate the force, and the crankshaft turns that force into torque. Modern combustion engines are very complex in their design and 
-structure, but these are their core components (unless you're talking about rotary engines--another simple yet ingenious design).
+structure, but these are their core components[^3][^4].
 
-[^1]: 
+Going down the length of the car, the next part is the torque converter[^5]. 
+```
+class TorqueConverter
+```
+The torque converter has two main functions: first, it allows slippage between the engine and the transmission. This is why when you stop, the engine
+can keep running without grinding any gears or tearing any axles. It does so using a fluid coupling with 3 parts: the impeller, connected to the engine, the stator, which redirects the fluid flow, and the turbine, which is attached to the transmission.
+
+Because the torque converter uses a fluid to transmit torque, one side (usually the impeller) can travel faster than the other side without causing any issues. This causes the other main benefit of having a torque converter: torque multiplication. As the stator redirects the fluid towards the blades of the turbine, the fluid will switch directions, increasing the torque felt by the turbine. The larger the difference between the impeller's velocity and that of the turbine, the more torque will be generated on the turbine side. Using this, I came up with a simple formula (which can be found in the `update()` function in the `TorqueConverter` class:
+
+`multiplication factor = (1 - exp(-c * (impeller_omega - turbine_omega))) * k * a * viscosity`,
+
+where k, c, and a are constants that adjust this formula to give realistic torque multiplication.
+
+This formula keeps the relationship between the velocities and torque multiplication fairly straightforward. As the difference in velocities grows, so does the multiplication factor, and as the difference shrinks, the multiplication factor does too. As the turbine's speed increases and gets closer to the impeller's, the torque multiplication will decrease, just like in a real car[^6]. 
+
+Next, we have the transmission. 
+
+```
+class Transmission
+```
+
+
+
+
+
+
+
+
+[^1]: In a real engine, the total air intake will increase until a certain RPM because the frequency of the intake strokes increase (and more intake strokes means more air). Past that point, the total air intake will decrease because the cylinders don't have enough time to fill completely. To model this, I first tried to create a piecewise function that would increase at low RPMs and decrease after the peak RPM. However, this solution felt contrived, so I changed it to the current logic. While the RPM is less than `peak_rpm`, the cylinders fill completely, so the multiplier for the air intake is 1. After the peak RPM, the air intake multiplier will decrease based on the ratio of the current RPM to `peak_rpm`. Although this solution is not perfect, I felt that it was a more accurate representation of what actually happens in an engine.
+[^2]: I had a hard time figuring out the initial stroke values for each piston. I knew the angle offset between each piston, but I wasn't sure which stroke this corresponded to. My solution is visible in the `configuration_setup()` function in the `Crankshaft` class. I start by using the firing order to count back a certain angle for each piston (depending on their offset), and I set all initial strokes to 3.0. Then, once a cylinder's angle hits 0, the stroke changes, and the next angle before a new stroke increases by 180 (this is where the `check_angles` list comes from. It takes a couple iterations to get all the strokes set, but I found this was the solution that required the least calculation on my part.
+[^3]: Unless you're talking about rotary engines--another simple yet ingenious design with one large Reuleaux-triangle-looking rotor.
+[^4]: The `Engine` class is just a wrapper class that calls the functions of the crankshaft and cylinders; the `Crankshaft` and `Cylinder` classes are still what make up the engine. 
+[^5]: Assuming the car has an automatic transmission.
+[^6]: In a real car, if we let the torque converter spin freely, the impeller would always be slightly faster than the turbine. As the speeds get faster and faster, this makes the energy transfer more and more inefficient. As a result, modern cars will typically lock the impeller and turbine together at higher speeds to reduce these inefficiencies.
+
+
 
 
 

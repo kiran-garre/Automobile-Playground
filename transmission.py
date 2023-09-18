@@ -72,11 +72,13 @@ class Transmission:
         ]
 
         downshift_points = [
-            (1, 10),   
-            (1, 20),  
-            (1, 30),  
-            (1, 45), 
-            (1, 60),  
+            (1000, 20),   
+            (1000, 20),  
+            (1000, 30),  
+            (1000, 45), 
+            (1000, 60),  
+            (1000, 70),
+            (1000, 80),
         ]
 
         if self.current_gear <= self.number_of_gears - 1:

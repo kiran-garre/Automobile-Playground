@@ -10,12 +10,12 @@ import copy
 
 class Engine:
 
-    def __init__(self, configuration="I", num_cylinders=4, stroke=0.0995, bore=0.0875, compression_ratio = 11, volumetric_efficiency=1) -> None:
+    def __init__(self, configuration="I", num_cylinders=4, stroke=0.0995, bore=0.0875, compression_ratio = 11, volumetric_efficiency=1, peak_rpm = 5000) -> None:
 
         self.num_cylinders = num_cylinders
         
         # create crankshaft
-        self.cs = Crankshaft(num_cylinders, configuration, stroke, bore, compression_ratio, volumetric_efficiency)
+        self.cs = Crankshaft(num_cylinders, configuration, stroke, bore, compression_ratio, volumetric_efficiency, peak_rpm)
 
         # engine stats
         self.hp = 0

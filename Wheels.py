@@ -7,7 +7,7 @@ import math
 import copy
 
 
-class WheelSet:
+class Wheels:
 
     def __init__(self, final_drive_ratio=3, drag_coef=0.2, cross_sectional_area=2, mass_per_wheel=27, radius=0.4) -> None:
         

@@ -69,6 +69,15 @@ Next, we have the transmission.
 ```
 class Transmission
 ```
+The transmission is what shifts gears in your car. That is, it changes the gear ratio, which determines how many revolutions of the engine's crankshaft it takes to make one revolution of the driveshaft. 
+
+Why would we want to change this? There are two reasons that come from the same idea: getting the most out of your engine.
+
+Most cars redline anywhere from 7000-10000 RPM. This is the RPM range where the engine couldn't handle much more strain, and even staying within the range quickly wears down the parts. Because the engine has physical RPM limit, we need different gears to control what RPM the engine is at. As an example, 1st gear is normally used for speeds under 20 mph. If you tried to drive at, say, 50 mph, the engine would have to spin at extremely high speeds, well past the physical limit. To prevent this, we switch into a gear with a lower engine:driveshaft gear ratio, allowing the engine to spin slower while keeping the driveshaft spinning at the same speed.
+
+The other reason a car shifts gears is related to something called the power band. This is the range of RPMs that provide the best torque and horsepower, and it is usually within 3000-6000 RPM[^7][^8]. Outside of this range, the torque and horsepower will be at nonoptimal values, so the engine is wasting energy. By shifting gears, we can control the RPM of the car and prevent it from going too far out of this power band. This means that the different gears actually allow us to extract the ideal amount of energy from the engine.
+
+
 
 
 
@@ -82,7 +91,9 @@ class Transmission
 [^3]: Unless you're talking about rotary engines--another simple yet ingenious design with one large Reuleaux-triangle-looking rotor.
 [^4]: The `Engine` class is just a wrapper class that calls the functions of the crankshaft and cylinders; the `Crankshaft` and `Cylinder` classes are still what make up the engine. 
 [^5]: Assuming the car has an automatic transmission.
-[^6]: In a real car, if we let the torque converter spin freely, the impeller would always be slightly faster than the turbine. As the speeds get faster and faster, this makes the energy transfer more and more inefficient. As a result, modern cars will typically lock the impeller and turbine together at higher speeds to reduce these inefficiencies.
+[^6]: In a real car, if we let the torque converter spin freely, the impeller would always be slightly faster than the turbine. As the rotational velocities get faster and faster, this makes the energy transfer more and more inefficient. As a result, modern cars will typically lock the impeller and turbine together at higher speeds to reduce these inefficiencies.
+[^7]: You may notice a parallel between the ideas of the powerband and the peak airflow. They are directly related and both influence the RPM range that creates the optimal torque and horsepower.
+[^8]: The powerband is actually why electric vehicles offer such fast acceleration. Electric motors usually have a much wider powerband than combustion engines, meaning that they can maintain high torque for a huge RPM range. At an RPM where a car engine might be producing only 40% of its optimal torque, an electric motor could produce 80% or more. This eliminates the need for multi-speed transmissions in electric cars and offers significant performance benefits.
 
 
 

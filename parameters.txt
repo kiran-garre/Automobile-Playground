@@ -1,0 +1,36 @@
+
+
+# ENGINE
+configuration = "I"
+number of cylinders = 6
+stroke = 0.08
+bore = 0.0896
+compression ratio = 9.3
+volumetric efficiency = 1.4
+peak rpm = 5500
+
+******************************
+
+# TORQUE CONVERTER 
+k = 2
+c = 0.03
+a = 20
+viscosity = 0.05
+
+******************************
+
+# TRANSMISSION
+number of gears = 8
+list of ratios = [5, 3.2, 2.14, 1.72, 1.31, 1, 0.82, 0.64]
+shift time = 0.4
+
+******************************
+
+# WHEELS
+final drive ratio = 3.15
+drag coefficient = 0.33
+cross sectional area = 2
+car mass = 1759
+mass per wheel = 27
+wheel radius = 0.49
+

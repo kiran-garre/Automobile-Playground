@@ -123,6 +123,10 @@ class Car:
         self.torque_converter.output_torque -= self.wheels.rolling_resistance * self.wheels.radius / self.wheels.final_drive_ratio
         drag_loss = (self.wheels.drag * self.wheels.radius / (self.transmission.gear_ratio * self.wheels.final_drive_ratio))
         
+        # disengage while shifting
+        if self.transmission.shifting:
+            self.torque_converter.output_torque = 0
+
         # update every part
         self.engine.update(self.throttle, drag_loss)
         self.torque_converter.update()

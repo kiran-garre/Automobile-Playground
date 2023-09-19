@@ -129,7 +129,7 @@ class Car:
 
         # update every part
         self.engine.update(self.throttle, drag_loss)
-        self.torque_converter.update()
+        self.torque_converter.update(self.transmission.shifting, drag_loss)
         self.transmission.update(self.throttle, self.engine_rpm, self.mph)
         self.wheels.update()
 

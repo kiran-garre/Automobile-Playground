@@ -30,7 +30,7 @@ class Car:
         default_engine_args = ["I", 6, 0.08, 0.0896, 9.3, 1.4, 5500]
         default_tc_args = [2, 0.03, 0.005, 0.05]
         default_transmission_args = [8, [5, 3.2, 2.14, 1.72, 1.31, 1, 0.82, 0.64], 0.4]
-        default_wheel_args = [3.15, 0.33, 2, 175927, 0.49]
+        default_wheel_args = [3.15, 0.33, 2, 175927, 0.24]
         default_list = [default_engine_args, default_tc_args, default_transmission_args, default_wheel_args]
 
         engine_args = []
@@ -100,12 +100,13 @@ class Car:
 
         # Linking
         self.engine.cs.moment += self.torque_converter.impeller_and_fluid_moment
-        self.torque_converter.driveshaft_moment += self.transmission.moment + self.wheels.moment
+        self.torque_converter.driveshaft_moment += self.transmission.moment + (self.wheels.moment / self.transmission.gear_ratio / self.wheels.final_drive_ratio)
+        self.original_moment = self.engine.cs.moment
 
     def update(self):
 
         self.throttle = 1
-
+        
         # when shift is complete
         prev_gear_ratio = self.transmission.gear_ratio
         
@@ -122,14 +123,10 @@ class Car:
         # apply rolling resistance to turbine/driveshaft torque
         self.torque_converter.output_torque -= self.wheels.rolling_resistance * self.wheels.radius / self.wheels.final_drive_ratio
         drag_loss = (self.wheels.drag * self.wheels.radius / (self.transmission.gear_ratio * self.wheels.final_drive_ratio))
-        
-        # disengage while shifting
-        if self.transmission.shifting:
-            self.torque_converter.output_torque = 0
 
         # update every part
         self.engine.update(self.throttle, drag_loss)
-        self.torque_converter.update()
+        self.torque_converter.update(self.transmission.shifting, drag_loss, self.mph)
         self.transmission.update(self.throttle, self.engine_rpm, self.mph)
         self.wheels.update()
 
@@ -146,7 +143,7 @@ class Car:
             self.torque_converter.driveshaft_moment = 0.3 + self.transmission.moment + (self.wheels.moment / self.transmission.gear_ratio / self.wheels.final_drive_ratio)
 
             self.engine.cs.omega *= self.transmission.gear_ratio / prev_gear_ratio
-            self.engine.cs.moment *= prev_gear_ratio / self.transmission.gear_ratio
+            self.engine.cs.moment += prev_gear_ratio / self.transmission.gear_ratio 
         
             # shifting process done; wait for next shift
             self.transmission.just_shifted = False
@@ -174,7 +171,7 @@ class Car:
             pressures.append(self.engine.cs.cylinders[1].pressure)
             mphs.append(self.mph)
             rpms.append(self.torque_converter.turbine_omega * 60 / (2 * math.pi))
-            print("RPM: {}\nSPEED: {}\nTIME: {}\n".format(self.engine_rpm, self.mph, _ * self.TIME_STEP))
+            print("RPM: {}\nSPEED: {}\nGEAR: {}\nTIME: {}\n".format(self.engine_rpm, self.mph, self.transmission.current_gear, _ * self.TIME_STEP))
             
             # PYGAME ANIMATION #######################
             
@@ -201,10 +198,6 @@ class Car:
         plt.show()
     
         pygame.quit()
-
-
-
-
 
 
 

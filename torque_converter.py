@@ -8,7 +8,7 @@ import copy
 
 class TorqueConverter:
 
-    def __init__(self, k = 2, c = 0.03, a = 20, viscosity = 0.05) -> None:
+    def __init__(self, k = 2, c = 0.03, a = 0.005, viscosity = 0.05) -> None:
         
         self.TIME_STEP = 0
         
@@ -28,7 +28,6 @@ class TorqueConverter:
         self.output_torque = 0
 
 
-
     def update(self, shifting, drag_loss):
         
         # calculate approxiate torque multiplication factor and apply it to output_torque
@@ -37,7 +36,9 @@ class TorqueConverter:
 
         # disengage during shift
         if shifting:
-            self.output_torque = -drag_loss
+            self.output_torque = 0
+
+        self.output_torque -= drag_loss
 
         # update values of turbine 
         turbine_alpha = self.output_torque / self.driveshaft_moment

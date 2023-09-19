@@ -30,7 +30,6 @@ shift time = 0.3
 final drive ratio = 3.15
 drag coefficient = 0.33
 cross sectional area = 2
-car mass = 1759
 mass per wheel = 27
 wheel radius = 0.24
 

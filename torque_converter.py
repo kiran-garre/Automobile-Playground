@@ -8,7 +8,7 @@ import copy
 
 class TorqueConverter:
 
-    def __init__(self, k = 2, c = 0.03, a = 0.005, viscosity = 0.05) -> None:
+    def __init__(self, k = 2, c = 0.03, a = 20, viscosity = 0.05) -> None:
         
         self.TIME_STEP = 0
         
@@ -26,6 +26,7 @@ class TorqueConverter:
         self.input_torque = 0
         self.turbine_omega = 0
         self.output_torque = 0
+
 
 
     def update(self, shifting, drag_loss, mph):

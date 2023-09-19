@@ -28,11 +28,15 @@ class TorqueConverter:
         self.output_torque = 0
 
 
-    def update(self):
+    def update(self, shifting, drag_loss):
         
         # calculate approxiate torque multiplication factor and apply it to output_torque
         mf = self.k * (1 - math.exp(-self.c * (self.impeller_omega - self.turbine_omega))) * (self.a * self.visc)
         self.output_torque = mf * self.input_torque
+
+        # disengage during shift
+        if shifting:
+            self.output_torque = -drag_loss
 
         # update values of turbine 
         turbine_alpha = self.output_torque / self.driveshaft_moment

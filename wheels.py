@@ -9,7 +9,7 @@ import copy
 
 class Wheels:
 
-    def __init__(self, final_drive_ratio=3, drag_coef=0.2, cross_sectional_area=2, mass_per_wheel=27, radius=0.4) -> None:
+    def __init__(self, final_drive_ratio=3, drag_coef=0.2, cross_sectional_area=2, mass_per_wheel=27, radius=0.24) -> None:
         
         self.TIME_STEP = 0
         
@@ -17,7 +17,6 @@ class Wheels:
         self.radius = radius
         self.final_drive_ratio = final_drive_ratio
         self.omega = 0
-        self.force_on_ground = 0
 
         self.car_mass = 1000
         self.rolling_resistance = 0.01 * self.car_mass * self.radius # approximation of rolling resistance torque

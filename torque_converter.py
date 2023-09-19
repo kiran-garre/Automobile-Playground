@@ -29,12 +29,10 @@ class TorqueConverter:
 
 
 
-    def update(self, shifting, drag_loss, mph):
+    def update(self, shifting, drag_loss):
         
         # calculate approxiate torque multiplication factor and apply it to output_torque
         mf = self.k * (1 - math.exp(-self.c * (self.impeller_omega - self.turbine_omega))) * (self.a * self.visc)
-        if mph > 40:
-            mf = 1 # locks at high speeds
         self.output_torque = mf * self.input_torque
 
         # disengage during shift

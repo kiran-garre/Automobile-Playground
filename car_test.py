@@ -29,7 +29,7 @@ class Car:
 
         default_engine_args = ["I", 6, 0.08, 0.0896, 9.3, 1.4, 5500]
         default_tc_args = [2, 0.03, 0.005, 0.05]
-        default_transmission_args = [8, [5, 3.2, 2.14, 1.72, 1.31, 1, 0.82, 0.64], 0.4]
+        default_transmission_args = [6, [3.2, 2.6, 1.8, 1.3, 1, 0.8], 0.3]
         default_wheel_args = [3.15, 0.33, 2, 175927, 0.24]
         default_list = [default_engine_args, default_tc_args, default_transmission_args, default_wheel_args]
 
@@ -101,7 +101,6 @@ class Car:
         # Linking
         self.engine.cs.moment += self.torque_converter.impeller_and_fluid_moment
         self.torque_converter.driveshaft_moment += self.transmission.moment + (self.wheels.moment / self.transmission.gear_ratio / self.wheels.final_drive_ratio)
-        self.original_moment = self.engine.cs.moment
 
     def update(self):
 
@@ -204,9 +203,6 @@ class Car:
 
 
 
-
-
-
         
        
 
@@ -216,7 +212,6 @@ class Car:
     
 
         
-
 
 
 

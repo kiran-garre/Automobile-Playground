@@ -61,13 +61,13 @@ class Transmission:
         """
         
         upshift_points = [
-            (4000 * throttle, 18 * throttle),   
-            (8000 * throttle, 25 * throttle),  
-            (8000 * throttle, 35 * throttle),  
-            (7000 * throttle, 50 * throttle),
+            (4000 * throttle, 15 * throttle),   
+            (7000 * throttle, 25 * throttle),  
+            (6500 * throttle, 40 * throttle),  
             (7000 * throttle, 70 * throttle),
+            (8000 * throttle, 85 * throttle),
         ]
-
+        
         downshift_points = [
             (1000, 10),   
             (1500, 20),  

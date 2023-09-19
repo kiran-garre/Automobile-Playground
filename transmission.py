@@ -27,7 +27,7 @@ class Transmission:
         self.shift_delay = self.shift_delay_gen()
         self.shifting = False
         self.just_shifted = False
-
+        self.save_where_shift = None
 
     def shift_delay_gen(self):
 
@@ -61,7 +61,7 @@ class Transmission:
         """
         
         upshift_points = [
-            (4000 * throttle, 15 * throttle),   
+            (4000 * throttle, 18 * throttle),   
             (8000 * throttle, 25 * throttle),  
             (8000 * throttle, 35 * throttle),  
             (7000 * throttle, 50 * throttle),
@@ -70,10 +70,10 @@ class Transmission:
 
         downshift_points = [
             (1000, 10),   
-            (1000, 20),  
-            (1000, 30),  
-            (1000, 45), 
-            (1000, 60),
+            (1500, 20),  
+            (3000, 30),  
+            (3000, 45), 
+            (3000, 60),
         ]
 
         if self.current_gear <= self.number_of_gears - 1:
@@ -101,12 +101,17 @@ class Transmission:
         shift = 0
 
         where_shift = self.shifting_logic(throttle, engine_rpm, vehicle_speed)
-        if where_shift != None or self.shifting:
+
+        if where_shift != None:
+            self.save_where_shift = where_shift
             self.shifting = True
+
+        if self.shifting:
             shift = next(self.shift_delay)
             if shift:
-                self.switch_gears(where_shift)
+                self.switch_gears(self.save_where_shift)
                 self.gear_ratio = self.ratio_list[self.current_gear - 1]
+                self.save_where_shift = None
                 self.shifting = False
                 self.just_shifted = True
 

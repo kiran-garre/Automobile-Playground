@@ -61,24 +61,19 @@ class Transmission:
         """
         
         upshift_points = [
-            (6000 * throttle, 15 * throttle),   
-            (9000 * throttle, 25 * throttle),  
-            (9000 * throttle, 35 * throttle),  
-            (9000 * throttle, 50 * throttle),
-            (8000 * throttle, 70 * throttle),
-            (8000 * throttle, 90 * throttle),
-            (8000 * throttle, 100 * throttle),
-
+            (4000 * throttle, 15 * throttle),   
+            (8000 * throttle, 25 * throttle),  
+            (8000 * throttle, 35 * throttle),  
+            (7000 * throttle, 50 * throttle),
+            (7000 * throttle, 70 * throttle),
         ]
 
         downshift_points = [
-            (1000, 20),   
+            (1000, 10),   
             (1000, 20),  
             (1000, 30),  
             (1000, 45), 
-            (1000, 60),  
-            (1000, 70),
-            (1000, 80),
+            (1000, 60),
         ]
 
         if self.current_gear <= self.number_of_gears - 1:

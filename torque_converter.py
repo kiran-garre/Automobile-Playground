@@ -8,7 +8,7 @@ import copy
 
 class TorqueConverter:
 
-    def __init__(self, k = 2, c = 0.03, a = 0.005, viscosity = 0.05) -> None:
+    def __init__(self, k = 2, c = 0.03, a = 20, viscosity = 0.05) -> None:
         
         self.TIME_STEP = 0
         
@@ -31,7 +31,7 @@ class TorqueConverter:
     def update(self):
         
         # calculate approxiate torque multiplication factor and apply it to output_torque
-        mf = self.k * (1 - math.exp(-self.c * (self.impeller_omega - self.turbine_omega))) * (1 + self.a * self.visc)
+        mf = self.k * (1 - math.exp(-self.c * (self.impeller_omega - self.turbine_omega))) * (self.a * self.visc)
         self.output_torque = mf * self.input_torque
 
         # update values of turbine 

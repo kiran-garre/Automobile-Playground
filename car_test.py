@@ -70,11 +70,11 @@ class Car:
             end = time.time()
             printtime = end - start
             start = time.time()
-            for _ in range(100):
+            for _ in range(1000):
                 self.update()
                 time.sleep(printtime)
             end = time.time()
-            override = (end - start) / 110
+            override = (end - start) / 1000
         
         self.initialize()
         

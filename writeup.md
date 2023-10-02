@@ -1,4 +1,4 @@
-Many years ago, I was an avid player of racing games. If I could burn down the highway at 250 miles an hour and plow through other cars with no damage to my own, I would be content.
+As a kid, I was an avid player of racing games. Any game where I could burn down the highway at 250 miles an hour, plowing through cars and other obstacles was a good game.
 
 There was one problem with these games: the customization. I could choose what car I wanted, what upgrades it had, and its paint color, but nothing else. But what I couldn't do was swap engines, transmissions, or even the wheels. 
 
@@ -83,11 +83,20 @@ In buliding the transmission, I ran into a dilemma. If I wanted to make my simul
 
 A simpler alternative that I chose was dealing with RPMs directly, rather than worrying about torque and acceleration. The `input_omega` would come from the turbine of the `TorqueConverter`, and the `output_omega` would be the input divided by the `gear_ratio`. I figured that this approach would let me deal with only one moment of inertia (representing the moment of inertia of the entire system connected to the `TorqueConverter` turbine), prevent any sort of slippage between the driveshaft and the turbine, and still be a reasonable model of what goes on inside a real car.
 
-Finally, there was one more thing I wanted to include to make the transmission slightly more accurate. The gear change in automatic transmissions is not instantaneous. It can take hundreds of milliseconds to perform, and during this time, the input and output ends get disengaged[^9].
+Finally, there was one more thing I wanted to include to make the transmission slightly more accurate. The gear changes in automatic transmissions are not instantaneous. They can take hundreds of milliseconds to perform, and during this time, the input and output ends of the transmission disengage.
 
+To model this, I created two booleans, `shifting` and `just_shifted`, and a generator function, `shift_delay_gen()`. When it is time to shift gears, `shifting` becomes `True` and the output torque of the car becomes 0[^9]. During this time, the generator will start to generate `False` values until the shift delay (set by the user) has passed, at which point `just_shifted` becomes `True` and `shifting` becomes `False`. Finally, when `just_shifted` is `True`, the necessary changes to the other parts of the car will take place in `car.py`.
 
+At last, we find ourself nearing the end: the wheels (and the rest) of the car.
 
+```
+class Wheels
+```
+Here is where you can change physical properties of the car itself, including the drag coefficient, wheel radius, and mass. The `update()` function of this class has only two purposes: calculating the linear speed of the car (in m/s) and calculating the drag the car feels. These values are then used in `car.py` and applied to the other parts accordingly.
 
+As for the `Car` class, it serves as a wrapper for the other files and handles things like linking each part and gear shifts. The class comes with a `calibrate_time()` function that sets the time step to run the program with approximately real seconds, with an optional `override` argument that lets the user set the time step manually. The `initialize()` function reads the parameters from `parameters.txt` and sets the corresponding values in the parts of the car. Finally, the user can see the pistons of the engine in action through a simple animation, enabled by setting the `animate` argumenet to `True` (this works best with a manual time step).
+
+In the future, I'd like to add functionality for more engine configurations (like "V" engines), more realistic/efficient shifting logic, tire slippage/traction control, and potentially even an electric motor class for EV/hybrid testing. Once these changes are complete, I think my current framework makes it easy to fit them into the car without having to drastically alter my car. And for a full a circle ending, that goes back to the very reason I made the program in the first place. Trying out car-related ideas has never been easier. The purpose wasn't to make a very accurate simulation for production-level testing. The purpose was to offer room for creativity. You are the --------
 
 
 
@@ -103,6 +112,7 @@ Finally, there was one more thing I wanted to include to make the transmission s
 [^6]: In a real car, if we let the torque converter spin freely, the impeller would always be slightly faster than the turbine. As the rotational velocities get faster and faster, this makes the energy transfer more and more inefficient. As a result, modern cars will typically lock the impeller and turbine together at higher speeds to reduce these inefficiencies.
 [^7]: You may notice a parallel between the ideas of the powerband and the peak airflow. They are directly related and both influence the RPM range that creates the optimal torque and horsepower.
 [^8]: The powerband is actually part of why electric vehicles accelerate so quickly. Electric motors usually have a much wider powerband than combustion engines, meaning that they can maintain high torque for a huge RPM range. At an RPM where a car engine might be producing only 40% of its optimal torque, an electric motor could produce 80% or more. This eliminates the need for multi-speed transmissions and offers significant performance benefits.
+[^9]: Normally, when the transmission disengages during a gear shift, the output torque of the transmission will become 0. However, because my implementation of a transmission deals only with RPMs, I have to set the `output_torque` of the torque converter to 0. 
 
 
 

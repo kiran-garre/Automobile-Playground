@@ -1,4 +1,4 @@
-# new-car
+# Automobile Playground
 
 Welcome to my virtual car! Here you'll find 5 files that each represent the most important components of a car: the crankshaft and cylinders, the engine (a wrapper for the former), the torque converter, the (automatic) transmission, and the wheels/rest of the car. A 6th file is also included as a wrapper class for the rest of the parts. The car has over 15 parameters that you can choose to make whatever type of engine you desire. If that isn't enough for you, you can always go into the source code itself to change whatever physics or properties you'd like!
 

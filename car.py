@@ -149,10 +149,7 @@ class Car:
 
 
     def demo_run(self, duration, override=0, animate=False):
-        torques_list = []
-        rpms = []
-        mphs = []
-        pressures = []
+        
         self.calibrate_time(override)
         steps = int(duration // self.TIME_STEP)
 
@@ -166,10 +163,6 @@ class Car:
         for _ in range(steps):
             
             self.update()
-            torques_list.append(self.engine.cs.torque)
-            pressures.append(self.engine.cs.cylinders[1].pressure)
-            mphs.append(self.mph)
-            rpms.append(self.torque_converter.turbine_omega * 60 / (2 * math.pi))
             print("RPM: {}\nSPEED: {}\nGEAR: {}\nTIME: {}\n".format(self.engine_rpm, self.mph, self.transmission.current_gear, _ * self.TIME_STEP))
             
             # PYGAME ANIMATION #######################
@@ -192,8 +185,7 @@ class Car:
 
                 # flip() the display to put your work on screen
                 pygame.display.flip()
-                       
-        plt.plot(np.arange(_ + 1) * self.TIME_STEP, np.array(torques_list))
+                
         plt.show()
     
         pygame.quit()

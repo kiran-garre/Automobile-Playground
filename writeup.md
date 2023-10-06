@@ -58,7 +58,7 @@ can keep running without grinding any gears or tearing any axles. It does so usi
 
 Because the torque converter uses a fluid to transmit torque, one side (usually the impeller) can travel faster than the other side without causing any issues. This causes the other main benefit of having a torque converter: torque multiplication. As the stator redirects the fluid towards the blades of the turbine, the fluid will switch directions, increasing the torque felt by the turbine. The larger the difference between the impeller's velocity and that of the turbine, the more torque will be generated on the turbine side. Using this, I came up with a simple formula (which can be found in the `update()` function in the `TorqueConverter` class:
 
-`multiplication factor = (1 - exp(-c * (impeller_omega - turbine_omega))) * k * a * viscosity`,
+`multiplication factor = k * (1 - exp(-c * (impeller_omega - turbine_omega))) * a * viscosity`,
 
 where k, c, and a are constants that adjust this formula to give realistic torque multiplication.
 
@@ -96,7 +96,9 @@ Here is where you can change physical properties of the car itself, including th
 
 As for the `Car` class, it serves as a wrapper for the other files and handles things like linking each part and gear shifts. The class comes with a `calibrate_time()` function that sets the time step to run the program with approximately real seconds, with an optional `override` argument that lets the user set the time step manually. The `initialize()` function reads the parameters from `parameters.txt` and sets the corresponding values in the parts of the car. Finally, the user can see the pistons of the engine in action through a simple animation, enabled by setting the `animate` argument to `True` (this works best with a manual time step).
 
-In the future, I'd like to add functionality for more engine configurations (like "V" engines), more realistic/efficient shifting logic, tire slippage/traction control, and potentially even an electric motor class for EV/hybrid testing. Once these changes are complete, I think my current framework makes it easy to fit them into the car without having to drastically alter my car. And for a full circle ending, that goes back to the very reason I made the program in the first place. Trying out car-related ideas has never been easier. The purpose wasn't to make a very accurate simulation for production-level testing. The purpose was to offer room for creativity. You are the --------
+In the future, I'd like to add functionality for more engine configurations (like "V" engines), more realistic/efficient shifting logic, tire slippage/traction control, and potentially even an electric motor class for EV/hybrid testing. Lukily, I think my current framework will make it easy to fit these features into the car without having to drastically change everything else. And for a full circle ending, that goes back to the very reason I made the program in the first place. The purpose wasn't to make a very accurate simulation for production-level testing. The purpose was to offer room for creativity. You are the driver of your own car&mdash;I just started your engine.
+
+
 
 
 
@@ -106,7 +108,7 @@ In the future, I'd like to add functionality for more engine configurations (lik
 
 [^1]: In a real engine, the total air intake will increase until a certain RPM because the frequency of the intake strokes increases (and more intake strokes means more air). Past that point, the total air intake will decrease because there isn't enough time to fill each cylinder completely. To model this, I first tried to create a piecewise function that would increase at low RPMs and decrease after the peak RPM. However, this solution felt contrived, so I changed it to the current logic. While the RPM is less than `peak_rpm`, the cylinders fill completely, so the multiplier for the air intake is 1. After the peak RPM, the air intake multiplier will decrease based on the ratio of the current RPM to `peak_rpm`. Although this solution is not perfect, I felt that it was a more accurate representation of what actually happens in an engine.
 [^2]: I had a hard time figuring out the initial stroke values for each piston. I knew the angle offset between each piston, but I wasn't sure which stroke this corresponded to. My solution is visible in the `configuration_setup()` function in the `Crankshaft` class. I start by using the firing order to count back a certain angle for each piston (depending on their offset), and I set all initial strokes to 3.0. Then, once a cylinder's angle hits 0, the stroke changes, and the next angle before a new stroke increases by 180 (this is where the `check_angles` list comes from. It takes a couple iterations to get all the strokes set, but I found this was the solution that required the least calculation on my part.
-[^3]: Unless you're talking about rotary engines--another simple yet ingenious design with one large Reuleaux-triangle-looking rotor.
+[^3]: Unless you're talking about rotary engines&mdash;another simple yet ingenious design with one large Reuleaux-triangle-looking rotor.
 [^4]: The `Engine` class is just a wrapper class that calls the functions of the crankshaft and cylinders; the `Crankshaft` and `Cylinder` classes are still what make up the engine. 
 [^5]: Assuming the car has an automatic transmission.
 [^6]: In a real car, if we let the torque converter spin freely, the impeller would always be slightly faster than the turbine. As the rotational velocities get faster and faster, this makes the energy transfer more and more inefficient. As a result, modern cars will typically lock the impeller and turbine together at higher speeds to reduce these inefficiencies.

@@ -18,7 +18,7 @@ This simulation is NOT a perfect, physically accurate simulation of a car. The p
 ### Getting started:
 Simply use the `parameters.txt` file to change the engine however you'd like (leaving a space blank will use a default value). Use a `Car` object's `demo_run()` method to get an idea of how the car works. To experiment further, you'll want to use the `update()` function with your own code to change paramters on the fly.
 
-### Want to learn more?
+### Want to know more?
 Click on the writeup.md file to see some more details about this project!
 
 

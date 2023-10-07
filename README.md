@@ -1,6 +1,6 @@
 # Automobile Playground
 
-Welcome to my virtual car! Here you'll find several that represent the most important components of a car: the crankshaft and cylinders, the torque converter, the (automatic) transmission, and the wheels/rest of the car. There are over 15 parameters that you can choose to make whatever type of car you desire. If that isn't enough for you, you can always go into the source code itself to change whatever physics or properties you'd like!
+Welcome to my virtual car! Here you'll find several files that represent the most important components of a car: the crankshaft and cylinders, the torque converter, the (automatic) transmission, and the wheels/rest of the car. There are over 15 parameters that you can choose to make whatever type of car you desire. If that isn't enough for you, you can always go into the source code itself to change whatever physics or properties you'd like!
 
 ### Why I made this simulation:
 Two words: creativity and curiosity.
